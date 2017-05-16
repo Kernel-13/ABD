@@ -1,0 +1,79 @@
+body {
+	margin-top:175px;
+	/*
+	background-color: #9F87BF   PURPLE ;
+	background-color: #F0CE69	YELLOW ;
+	background-color: #EA9363 	ORANGE ;
+	background-color: #53BDB7 	SKYBLUE;
+	*/
+	background: url('../img/silkbrush8.png');
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	background-color: #77657f;
+	color: white;
+	font-family: 'Fira Sans', sans-serif;
+}
+
+.navbar {
+	font-family: 'Asap', sans-serif;
+}
+
+.navbar span {
+	color: crimson; 
+}
+
+.login {
+	text-align: center;
+}
+
+.reminder {
+	color: gray;
+}
+
+.submitButton {
+	text-align: center;
+}
+
+.icon_hidden {
+	display: none;
+}
+
+.icon_shown_err {
+	color: red;	
+}
+
+.icon_shown_ok {
+	color: green;	
+}
+
+.signal {
+	width: 30px;
+}
+
+.message-box {
+	padding-right: 0;
+	padding-left: 0;
+	vertical-align: center;
+}
+
+.all-ok {
+	box-shadow: 0 0 10px green;
+}
+
+#mensajes {
+	height: 150px;
+}
+
+.something-wrong {
+	box-shadow: 0 0 10px red;
+}
+/*
+	box-shadow: 0 0 10px red;
+	box-shadow: 0 0 10px green;
+*/
+
+.form-group {
+	vertical-align: center;
+	color: black;
+	font-weight: bold;
+}
