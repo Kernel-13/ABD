@@ -12,8 +12,22 @@ require('includes/db.php');
 <body>
 
 	<?php require "includes/navbar.php"; ?>
+	<?php require "includes/functions.php"; ?>
 
-	<div class="container">
+	<?php 
+	if (!isset($_SESSION['username'])) {
+		echo '
+		<div class="container-fluid">
+			<div class="row section" style="text-align:center;">
+				<h2> Debes estar registrado y haber iniciado sesión para poder ver / enviar mensajes </h2>
+			</div>
+		</div>
+		';
+	} else {
+
+		?>
+
+		<div class="container">
 
 		<?php // Envio de Mensaje
 		if (isset($_POST['asunto']) && isset($_POST['mensaje'])){
@@ -33,8 +47,8 @@ require('includes/db.php');
 				$row = mysqli_num_rows($resultado);
 				if($row == 1){
 
-					$q2 = "INSERT INTO mensajes(message_sender, message_receiver, message_issue, message_body, message_type, message_read)
-					VALUES('".$_SESSION['user_id']."', '".$array['user_id']."', '".$asunto."', '".$mensaje."', '".$tipo."', '".$read."')";
+					$q2 = "INSERT INTO mensajes_privados(message_sender, message_receiver, message_issue, message_body)
+					VALUES('".$_SESSION['user_id']."', '".$array['user_id']."', '".$asunto."', '".$mensaje."')";
 
 
 					if ($mysqli->query($q2) === TRUE) {
@@ -59,69 +73,101 @@ require('includes/db.php');
 					';
 				}
 			} elseif (isset($_POST['grupo'])  && !isset($_POST['receptor'])) { // Mensaje Grupal
-				/*
+
 				// Mensaje Grupal
-				// Mirar si existe usuario receptor
-				$tipo = 'Grupo';
-				$q1 = "SELECT * FROM usuarios WHERE user_name='$receptor'";
+				// Mirar si existe el grupo
+				$grupo = $_POST['grupo'];
+				$q1 = "SELECT * FROM grupos WHERE group_name='$grupo'";
 				$resultado = mysqli_query($mysqli,$q1) or die(mysql_error());
-				$array = $resultado->fetch_assoc();
+
 				$row = mysqli_num_rows($resultado);
 				if($row == 1){
-				//Existe usuario
-					$q2 = "INSERT INTO mensajes(message_sender, message_receiver, message_issue, message_body, message_type) VALUES(".$_SESSION['user_id'].", ".$array['user_id'].", $asunto, $mensaje, $tipo)";
-					if ($mysqli->query($q2) === TRUE) {
-						echo '
-						<div class="row section" style="text-align:center;">
-							<h5> El mensaje se ha enviado con exito. </h5>
-						</div>
-						';
+
+					// Mirar si el usuario es miembro del grupo
+					$grupos_usuario = get_user_from_username($mysqli,$_SESSION["username"]);
+					$g = $grupos_usuario["user_groups"];
+					$aux = explode(",", $g);
+					if (in_array($grupo, $aux)) {
+
+						/*
+						// OK - Obtenemos todos los usuarios
+						// Y vemos cuales de ellos pertenecen al grupo al que queremos enviar el mensaje
+						$lista_usuarios = obtain_user_list($mysqli);
+						$all_ok = FALSE;
+						*/
+
+						// Insertamos el mensaje en la tabla
+						$q2 = "INSERT INTO mensajes_grupales(message_sender, message_group, message_issue, message_body)
+						VALUES ('".$_SESSION['user_id']."', '".$grupo."', '".$asunto."', '".$mensaje."')";
+						if ($mysqli->query($q2) === TRUE) {
+							echo '
+							<div class="row section" style="text-align:center;">
+								<h5> El mensaje se ha enviado con exito al grupo '.$grupo.' </h5>
+							</div>
+							';
+						} else {
+							echo '
+							<div class="row section" style="text-align:center;">
+								<h5> A ocurrido un error al enviar el mensaje al grupo '.$grupo.'</h5>
+							</div>
+							';
+						}
+
+						/*
+						while ($usuario = $lista_usuarios->fetch_assoc()) {
+							$h = $usuario["user_groups"];
+							$aux2 = explode(",", $h);
+							if (in_array($grupo, $aux2)) {
+								$q2 = "INSERT INTO mensajes_grupales(message_sender, message_group, message_issue, message_body)
+								VALUES ('".$_SESSION['user_id']."', '".$grupo."', '".$asunto."', '".$mensaje."')";
+								if ($mysqli->query($q2) === TRUE) {
+									$all_ok = TRUE;
+								} else {
+									$all_ok = FALSE;
+								}
+							}
+						}
+						*/
 					} else {
 						echo '
 						<div class="row section" style="text-align:center;">
-							<h5> A ocurrido un error. </h5>
+							<h5> El mensaje no se pudo enviar debido a que el usuario no pertenece al grupo escogido. </h5>
 						</div>
 						';
 					}
-
 				} else {
 					echo '
 					<div class="row section" style="text-align:center;">
-						<h5> El mensaje no se pudo enviar debido a que el usuario receptor no existe. </h5>
+						<h5> El mensaje no se pudo enviar debido a que el grupo no existe. </h5>
 					</div>
 					';
 				}
-				*/
 			} elseif (!isset($_POST['grupo'])  && !isset($_POST['receptor'])) { // Mensaje Publico
 				
-				$tipo = 'Publico';
 				$q1 = "SELECT * FROM usuarios";
 				$resultado = mysqli_query($mysqli,$q1) or die(mysql_error());
 				$row = mysqli_num_rows($resultado);
 				if($row > 0){
-					$all_ok = FALSE;
-					while ($registro = $resultado->fetch_assoc()) {
-						$q2 = "INSERT INTO mensajes(message_sender, message_receiver, message_issue, message_body, message_type, message_read)
-						VALUES('".$_SESSION['user_id']."', '".$registro['user_id']."', '".$asunto."', '".$mensaje."', '".$tipo."', '".$read."')";					
 
-						if ($_SESSION['user_id'] != $registro['user_id']) {
-							if ($mysqli->query($q2) === TRUE) {
-								$all_ok = TRUE;
-							} else {
-								$all_ok = FALSE;
-							}
-						}
+					$q2 = "INSERT INTO mensajes_publicos(message_sender, message_issue, message_body)
+					VALUES('".$_SESSION['user_id']."', '".$asunto."', '".$mensaje."')";					
+
+					if ($mysqli->query($q2) === TRUE) {
+						$all_ok = TRUE;
+					} else {
+						$all_ok = FALSE;
 					}
+					
 					if ($all_ok) {
 						echo '
 						<div class="row section" style="text-align:center;">
-							<h5> Los mensajes se han enviado con exito. </h5>
+							<h5> El mensaje publico se ha enviado con exito. </h5>
 						</div>
 						';
 					} else {
 						echo '
 						<div class="row section" style="text-align:center;">
-							<h5> A ocurrido un error al enviar los mensajes. (Publico)</h5>
+							<h5> A ocurrido un error al enviar el mensaje. (Publico)</h5>
 						</div>
 						';
 					}
@@ -147,8 +193,8 @@ require('includes/db.php');
 				<!-- Tabs -->
 				<ul class="nav nav-tabs nav-justified">
 					<li class="active"><a data-toggle="tab" href="#private-message">Enviar Mensaje Privado</a></li>
-					<li><a data-toggle="tab" href="#public-message">Enviar Mensaje Publico</a></li>
 					<li><a data-toggle="tab" href="#group-message">Enviar Mensaje Grupal</a></li>
+					<li><a data-toggle="tab" href="#public-message">Enviar Mensaje Publico</a></li>
 				</ul>
 
 				<!-- Tab Content -->
@@ -258,8 +304,12 @@ require('includes/db.php');
 			</div>
 		</div>
 	</div>
+
 	<?php 
-	mysqli_close($mysqli);
-	?>
+} ?>
+
+<?php 
+mysqli_close($mysqli);
+?>
 </body>
 </html>
